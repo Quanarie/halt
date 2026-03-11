@@ -68,7 +68,7 @@ mvn spring-boot:run -pl ride-service
 Przesłanie testowego zamówienia przejazdu:
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/rides \
+curl -X POST http://localhost:8080/api/rides \
 -H "Content-Type: application/json" \
 -d '{
 "passengerId": "550e8400-e29b-41d4-a716-446655440000",
@@ -77,3 +77,10 @@ curl -X POST http://localhost:8080/api/v1/rides \
 "endLat": 52.40, "endLon": 16.92
 }'
 ```
+
+### Testy
+
+```bash
+mvn test -pl ride-service
+```
+
