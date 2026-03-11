@@ -40,3 +40,40 @@ Mamy dwa typy dopasowania:
     * Jadąc do punktu B, otrzymuje następne oferty przejazdu.
 * **Zakończenie:** Po zakończeniu kursu kierowca może przejść w tryb "Przerwa" – system przestaje uwzględniać
   go w wynikach wyszukiwania dla nowych pasażerów. Kierowca potrafi zostawić review pasażerowi.
+
+## Uruchomienie aplikacji
+Projekt wykorzystuje architekturę Sidecar Infrastructure, 
+gdzie usługi wspierające działają w dokerze, a aplikacja natywnie na hoście.
+
+### Infrastruktura
+
+Uruchomienie bazy postgres, kafki oraz kafka-ui.
+
+Porty w compose.yaml
+
+```bash
+docker-compose up -d
+```
+
+### Aplikacja
+
+Z katalogu głownego:
+
+```bash
+mvn spring-boot:run -pl ride-service
+```
+
+### Sanity Check
+ 
+Przesłanie testowego zamówienia przejazdu:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/rides \
+-H "Content-Type: application/json" \
+-d '{
+"passengerId": "550e8400-e29b-41d4-a716-446655440000",
+"price": 25.50,
+"startLat": 52.22, "startLon": 21.01,
+"endLat": 52.40, "endLon": 16.92
+}'
+```
