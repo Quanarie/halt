@@ -1,9 +1,7 @@
 package pl.quanarie.halt.common.event;
 
-import java.util.UUID;
-
 public record UserLocationUpdatedEvent(
-    UUID userId,
+    String userId,
     double latitude,
     double longitude
 ) {}

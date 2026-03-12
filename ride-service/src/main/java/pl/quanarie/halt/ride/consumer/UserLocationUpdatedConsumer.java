@@ -34,8 +34,9 @@ public class UserLocationUpdatedConsumer {
 
 		kafkaTemplate.send(
 			DRIVER_LOCATION_FOR_PASSENGER,
-			event.userId().toString(),
+			event.userId(),
 			RideEventMapper.toDriverLocationUpdated(ride.get(), event.latitude(), event.longitude())
 		);
 	}
 }
+/**/

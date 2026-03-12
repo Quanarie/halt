@@ -6,6 +6,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pl.quanarie.halt.common.event.RideAcceptedEvent;
 import pl.quanarie.halt.ride.exception.DuplicateRideRequestException;
 import pl.quanarie.halt.ride.exception.IllegalRideStatusTransitionException;
 import pl.quanarie.halt.ride.exception.RideNotFoundException;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static pl.quanarie.halt.common.kafka.KafkaTopics.RIDE_ACCEPTED;
 import static pl.quanarie.halt.common.kafka.KafkaTopics.RIDE_REQUESTED;
 
 @Service
@@ -63,6 +65,27 @@ public class RideService {
 	}
 
 	@Transactional
+	public void acceptRide(UUID rideId, UUID driverId) {
+		Ride ride = rideRepository.findById(rideId)
+			.orElseThrow(() -> new RuntimeException("Ride not found"));
+
+		if (!ride.getStatus().equals(RideStatus.MATCHING)) {
+			throw new RuntimeException("Ride already taken or cancelled");
+		}
+
+		ride.setDriverId(driverId);
+		ride.setStatus(RideStatus.ACCEPTED);
+		rideRepository.save(ride);
+
+		log.info("Przejazd {} zaakceptowany przez kierowcę {}", rideId, driverId);
+		kafkaTemplate.send(
+			RIDE_ACCEPTED,
+			ride.getPassengerId().toString(),
+			RideEventMapper.toRideAcceptedEvent(ride)
+		);
+	}
+
+	@Transactional
 	public void updateStatus(UUID rideId, RideStatus newStatus) {
 		Ride ride = rideRepository.findById(rideId)
 			.orElseThrow(() -> new RideNotFoundException(rideId));
@@ -89,7 +112,11 @@ public class RideService {
 		};
 	}
 
-	public Optional<Ride> tryGetActiveRideForDriver(UUID driverId) {
-		return rideRepository.findFirstByDriverIdAndStatusIn(driverId, ACTIVE_STATUSES);
+	public Optional<Ride> tryGetActiveRideForDriver(String driverId) {
+		return rideRepository.findFirstByDriverIdAndStatusIn(UUID.fromString(driverId), ACTIVE_STATUSES);
+	}
+
+	public Ride findRideById(UUID id){
+		return rideRepository.findById(id).orElseThrow(() -> new RideNotFoundException(id));
 	}
 }
