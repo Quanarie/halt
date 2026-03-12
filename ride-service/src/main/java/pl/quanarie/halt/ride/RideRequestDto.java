@@ -19,6 +19,9 @@ public record RideRequestDto(
 	@NotNull
 	Double endLon,
 
+	@NotNull
+	String idempotencyKey,
+
 	@Positive
 	BigDecimal price
 ) {

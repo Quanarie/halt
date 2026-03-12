@@ -2,10 +2,12 @@ package pl.quanarie.halt.ride;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.quanarie.halt.config.KafkaConfig;
+import pl.quanarie.halt.exception.DuplicateRideRequestException;
 
 @Service
 @RequiredArgsConstructor
@@ -24,14 +26,22 @@ public class RideService {
 			.endLon(request.endLon())
 			.status(RideStatus.REQUESTED)
 			.price(request.price())
+			.idempotencyKey(request.idempotencyKey())
 			.build();
 
-		Ride savedRide = rideRepository.save(ride);
-		log.info("Created ride request with ID: {}", savedRide.getId());
+		Ride savedRide;
+		try {
+			savedRide = rideRepository.saveAndFlush(ride);
+			log.info("Created ride request with ID: {}", savedRide.getId());
+		} catch (DataIntegrityViolationException e) {
+			log.warn("Duplicate ride request detected for idempotency key: {}", request.idempotencyKey());
+			throw new DuplicateRideRequestException("Duplicate ride request");
+		}
 
-		// TODO: outbox
+		// TODO: outbox instead of saveAndFlush, cuz there is still non atomic window
+		//  between commit to db and send to kafka.
 		kafkaTemplate.send(
-			KafkaConfig.RIDE_ORDERED,
+			KafkaConfig.RIDE_REQUESTED,
 			savedRide.getId().toString(),
 			RideRequestedEvent.fromRide(savedRide)
 		);

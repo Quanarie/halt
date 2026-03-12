@@ -9,11 +9,11 @@ import org.springframework.kafka.config.TopicBuilder;
 @Configuration
 public class KafkaConfig {
 
-	public static String RIDE_ORDERED = "ride.ordered";
+	public static String RIDE_REQUESTED = "ride.requested";
 
 	@Bean
-	public NewTopic rideOrderedTopic() {
-		return TopicBuilder.name(RIDE_ORDERED)
+	public NewTopic rideRequestedTopic() {
+		return TopicBuilder.name(RIDE_REQUESTED)
 			.partitions(3)
 			.build();
 	}

@@ -1,5 +1,6 @@
 package pl.quanarie.halt;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +13,9 @@ import pl.quanarie.halt.ride.RideRepository;
 import pl.quanarie.halt.ride.RideRequestDto;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,15 +40,20 @@ class RideIntegrationTest {
 		testKafkaConsumer.reset();
 	}
 
-	@Test
-	void shouldPersistRideAndPublishEvent() {
-		// GIVEN:
-		RideRequestDto request = new RideRequestDto(
+	private static RideRequestDto getRideRequestDto() {
+		return new RideRequestDto(
 			UUID.randomUUID(),
 			52.22, 21.01,
 			52.40, 16.92,
+			UUID.randomUUID().toString(),
 			new BigDecimal("25.50")
 		);
+	}
+
+	@Test
+	void shouldPersistRideAndPublishEvent() {
+		// GIVEN:
+		RideRequestDto request = getRideRequestDto();
 
 		// WHEN:
 		ResponseEntity<Void> response = restTemplate.postForEntity("/rides", request, Void.class);
@@ -69,5 +77,27 @@ class RideIntegrationTest {
 				assertThat(event.passengerId()).isEqualTo(request.passengerId());
 				assertThat(event.price()).isEqualByComparingTo(request.price());
 			});
+	}
+
+	@Test
+	void shouldHandleConcurrentDoubleSubmit() {
+		// GIVEN:
+		RideRequestDto request = getRideRequestDto();
+
+		// WHEN:
+		CompletableFuture<ResponseEntity<Void>> call1 = CompletableFuture.supplyAsync(() ->
+			restTemplate.postForEntity("/rides", request, Void.class));
+
+		CompletableFuture<ResponseEntity<Void>> call2 = CompletableFuture.supplyAsync(() ->
+			restTemplate.postForEntity("/rides", request, Void.class));
+
+		CompletableFuture.allOf(call1, call2).join();
+
+		// THEN:
+		var statusCodes = List.of(call1.join().getStatusCode(), call2.join().getStatusCode());
+		assertThat(statusCodes).containsExactlyInAnyOrder(HttpStatus.CREATED, HttpStatus.CONFLICT);
+
+		// DB:
+		assertThat(rideRepository.findAll()).hasSize(1);
 	}
 }

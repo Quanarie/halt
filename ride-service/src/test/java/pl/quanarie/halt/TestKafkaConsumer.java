@@ -13,7 +13,7 @@ public class TestKafkaConsumer {
 
 	private final List<RideRequestedEvent> consumedEvents = new CopyOnWriteArrayList<>();
 
-	@KafkaListener(topics = "ride.ordered")
+	@KafkaListener(topics = "ride.requested")
 	public void listen(RideRequestedEvent event) {
 		consumedEvents.add(event);
 	}

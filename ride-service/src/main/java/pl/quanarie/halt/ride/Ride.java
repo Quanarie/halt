@@ -31,10 +31,11 @@ public class Ride {
 
   private BigDecimal price;
 
-//  @Version
-//  private Long version; // TODO: Optimistic Lock
-
   private LocalDateTime createdAt;
+
+  // TODO: rate limiting in api gateway
+  @Column(unique = true, nullable = false)
+  private String idempotencyKey; // manage creating a couple of requests, but not duplicates
 
   @PrePersist
   protected void onCreate() {
