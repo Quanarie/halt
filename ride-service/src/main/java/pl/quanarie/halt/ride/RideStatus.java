@@ -1,11 +1,24 @@
 package pl.quanarie.halt.ride;
 
 public enum RideStatus {
-  REQUESTED,   // Pasażer wysłał prośbę
-  MATCHING,    // Szukamy kierowcy (po pre-autoryzacji płatności)
-  ACCEPTED,    // Kierowca przyjął zlecenie
-  ARRIVED,     // Kierowca jest pod adresem
-  IN_PROGRESS, // Przejazd trwa
-  COMPLETED,   // Koniec trasy
-  CANCELLED    // Anulowano
+  /** Pasażer wysłał prośbę o przejazd. System oczekuje na weryfikację płatności. */
+  REQUESTED,
+
+  /** Płatność została zweryfikowana. System aktywnie szuka dostępnego kierowcy w okolicy. */
+  MATCHING,
+
+  /** Kierowca zaakceptował zlecenie i jest w drodze do punktu początkowego. */
+  ACCEPTED,
+
+  /** Kierowca dotarł na miejsce startu i oczekuje na pasażera. */
+  ARRIVED,
+
+  /** Pasażer jest w pojeździe, a kierowca rozpoczął realizację trasy. */
+  IN_PROGRESS,
+
+  /** Przejazd został pomyślnie zakończony w punkcie docelowym. */
+  COMPLETED,
+
+  /** Przejazd został przerwany przez pasażera, kierowcę lub system przed zakończeniem. */
+  CANCELLED
 }

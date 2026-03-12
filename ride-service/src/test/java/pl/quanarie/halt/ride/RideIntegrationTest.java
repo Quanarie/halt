@@ -1,6 +1,5 @@
-package pl.quanarie.halt;
+package pl.quanarie.halt.ride;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,8 +8,6 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import pl.quanarie.halt.ride.RideRepository;
-import pl.quanarie.halt.ride.RideRequestDto;
 
 import java.math.BigDecimal;
 import java.util.List;

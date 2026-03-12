@@ -6,8 +6,13 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pl.quanarie.halt.config.KafkaConfig;
-import pl.quanarie.halt.exception.DuplicateRideRequestException;
+import pl.quanarie.halt.ride.exception.DuplicateRideRequestException;
+import pl.quanarie.halt.ride.exception.IllegalRideStatusTransitionException;
+import pl.quanarie.halt.ride.exception.RideNotFoundException;
+
+import java.util.UUID;
+
+import static pl.quanarie.halt.common.kafka.KafkaTopics.RIDE_REQUESTED;
 
 @Service
 @RequiredArgsConstructor
@@ -35,17 +40,44 @@ public class RideService {
 			log.info("Created ride request with ID: {}", savedRide.getId());
 		} catch (DataIntegrityViolationException e) {
 			log.warn("Duplicate ride request detected for idempotency key: {}", request.idempotencyKey());
-			throw new DuplicateRideRequestException("Duplicate ride request");
+			throw new DuplicateRideRequestException();
 		}
 
 		// TODO: outbox instead of saveAndFlush, cuz there is still non atomic window
 		//  between commit to db and send to kafka.
 		kafkaTemplate.send(
-			KafkaConfig.RIDE_REQUESTED,
+			RIDE_REQUESTED,
 			savedRide.getId().toString(),
-			RideRequestedEvent.fromRide(savedRide)
+			RideEventMapper.toRideRequested(savedRide)
 		);
 
 		return savedRide;
+	}
+
+	@Transactional
+	public void updateStatus(UUID rideId, RideStatus newStatus) {
+		Ride ride = rideRepository.findById(rideId)
+			.orElseThrow(() -> new RideNotFoundException(rideId));
+
+		if (!canTransition(ride.getStatus(), newStatus)) {
+			log.error("Nieprawidłowe przejście stanu dla przejazdu {}: {} -> {}",
+				rideId, ride.getStatus(), newStatus);
+			throw new IllegalRideStatusTransitionException(ride.getStatus(), newStatus);
+		}
+
+		ride.setStatus(newStatus);
+		rideRepository.save(ride);
+		log.info("Status przejazdu {} zmieniony na {}", rideId, newStatus);
+	}
+
+	private boolean canTransition(RideStatus current, RideStatus next) {
+		return switch (current) {
+			case REQUESTED -> next == RideStatus.MATCHING || next == RideStatus.CANCELLED;
+			case MATCHING -> next == RideStatus.ACCEPTED || next == RideStatus.CANCELLED;
+			case ACCEPTED -> next == RideStatus.ARRIVED || next == RideStatus.CANCELLED;
+			case ARRIVED -> next == RideStatus.IN_PROGRESS || next == RideStatus.CANCELLED;
+			case IN_PROGRESS -> next == RideStatus.COMPLETED;
+			case COMPLETED, CANCELLED -> false;
+		};
 	}
 }

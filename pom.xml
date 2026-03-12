@@ -9,11 +9,13 @@
     <relativePath/>
   </parent>
 
-  <groupId>pl.quanarie</groupId>
+  <groupId>pl.quanarie.halt</groupId>
   <artifactId>halt</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
   <modules>
+    <module>common</module>
+    <module>payment-service</module>
     <module>ride-service</module>
   </modules>
 

@@ -1,4 +1,4 @@
-package pl.quanarie.halt.exception;
+package pl.quanarie.halt.ride.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
