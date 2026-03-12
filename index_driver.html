@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>HALT! - Driver Console</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #1e1e1e;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            width: 420px;
+            text-align: center;
+        }
+        h2 { margin-top: 0; color: #bb86fc; }
+
+        .status-bar { margin-bottom: 1.5rem; font-size: 0.9rem; }
+        .dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; background: #f44336; }
+        .online { background: #4caf50; box-shadow: 0 0 8px #4caf50; }
+
+        .offer-card {
+            background: #252525;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 2px solid #bb86fc;
+            animation: pulse 2s infinite;
+            display: none;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(187, 134, 252, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(187, 134, 252, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(187, 134, 252, 0); }
+        }
+
+        .label { color: #888; font-size: 0.75rem; text-transform: uppercase; margin-top: 10px; }
+        .value { font-size: 1rem; font-weight: bold; color: #fff; margin-bottom: 10px; word-break: break-all; }
+
+        .actions { display: flex; gap: 10px; margin-top: 20px; }
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-accept { background: #03dac6; color: #000; }
+        .btn-accept:hover { background: #01b0a1; }
+        .btn-decline { background: #cf6679; color: #fff; }
+
+        .log-container {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: #03dac6;
+            text-align: left;
+            height: 80px;
+            overflow-y: auto;
+            background: #000;
+            padding: 8px;
+            margin-top: 1.5rem;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>HALT! Driver Panel</h2>
+
+    <div class="status-bar">
+        <span id="dot" class="dot"></span>
+        <span id="statusText">Łączenie z systemem...</span>
+    </div>
+
+    <div id="waitingState">
+        <p style="color: #888;">Czekam na nowe zlecenia w okolicy...</p>
+    </div>
+
+    <div id="offerCard" class="offer-card">
+        <div style="color: #bb86fc; font-weight: bold; margin-bottom: 10px;">NOWA OFERTA!</div>
+
+        <div class="label">ID Przejazdu</div>
+        <div id="offRideId" class="value">---</div>
+
+        <div class="label">Punkt Odbioru (Lat/Lon)</div>
+        <div id="offCoords" class="value">---</div>
+
+        <div class="actions">
+            <button class="btn-accept" onclick="respond(true)">AKCEPTUJ</button>
+            <button class="btn-decline" onclick="respond(false)">IGNORUJ</button>
+        </div>
+    </div>
+
+    <div class="log-container" id="logs">> System gotowy...</div>
+</div>
+
+<script>
+    const driverId = "123e4567-e89b-12d3-a456-426614174000";
+    const gatewayUrl = "http://localhost:8080/api/notifications";
+    let currentRideId = null;
+
+    function log(msg) {
+        const div = document.createElement('div');
+        div.innerText = "> " + msg;
+        document.getElementById('logs').prepend(div);
+    }
+
+    function connect() {
+        const socket = new SockJS(gatewayUrl);
+        const stompClient = Stomp.over(socket);
+        stompClient.debug = null;
+
+        stompClient.connect({}, () => {
+            document.getElementById('dot').className = "dot online";
+            document.getElementById('statusText').innerText = "Kierowca ONLINE";
+            log("Połączono. Czekam na /offers...");
+
+            stompClient.subscribe(`/client/user/${driverId}/offers`, (msg) => {
+                const offer = JSON.parse(msg.body);
+                log("Nowa oferta: " + offer.rideId);
+                showOffer(offer);
+            });
+        }, (err) => {
+            document.getElementById('dot').className = "dot";
+            document.getElementById('statusText').innerText = "Błąd połączenia";
+            setTimeout(connect, 5000);
+        });
+    }
+
+    function showOffer(offer) {
+        currentRideId = offer.rideId;
+        document.getElementById('offRideId').innerText = offer.rideId;
+        document.getElementById('offCoords').innerText = `${offer.startLatitude.toFixed(4)}, ${offer.startLongitude.toFixed(4)}`;
+        document.getElementById('waitingState').style.display = 'none';
+        document.getElementById('offerCard').style.display = 'block';
+    }
+
+    function respond(accepted) {
+        if (accepted) {
+            log("Akceptowanie...");
+            fetch(`http://localhost:8080/api/rides/${currentRideId}/accept?driverId=${driverId}`, {
+                method: 'POST'
+            }).then(res => {
+                if(res.ok) {
+                    log("ZAAKCEPTOWANO!");
+                    alert("Zlecenie przyjęte! Pasażer został powiadomiony.");
+                } else {
+                    log("BŁĄD: Oferta nieaktualna.");
+                }
+            });
+        }
+        document.getElementById('offerCard').style.display = 'none';
+        document.getElementById('waitingState').style.display = 'block';
+    }
+
+    connect();
+</script>
+
+</body>
+</html>

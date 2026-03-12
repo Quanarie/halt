@@ -1,39 +1,175 @@
 <!DOCTYPE html>
-<html>
+<html lang="pl">
 <head>
-    <title>Halt! Minimal</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halt! - Passenger Real-Time Radar</title>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #1e1e1e;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            width: 400px;
+            text-align: center;
+        }
+        .status-dot {
+            height: 10px;
+            width: 10px;
+            background-color: #bbb;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .online { background-color: #4caf50; box-shadow: 0 0 8px #4caf50; }
+        .offline { background-color: #f44336; }
+
+        .data-box {
+            background: #252525;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1.5rem;
+            border: 1px solid #333;
+        }
+        .label { color: #888; font-size: 0.8rem; text-transform: uppercase; }
+        .value { font-size: 1.1rem; font-weight: bold; color: #fff; margin-bottom: 0.5rem; }
+
+        h2 { margin-top: 0; color: #bb86fc; }
+        .log-container {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: #00ff00;
+            text-align: left;
+            height: 100px;
+            overflow-y: auto;
+            background: #000;
+            padding: 5px;
+            margin-top: 1rem;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
-<h2>Status: <span id="status">Rozłączony</span></h2>
-<p>Pozycja: <b id="pos">Czekam...</b></p>
-<div id="logs" style="font-family: monospace; color: green;"></div>
+
+<div class="container">
+    <h2>HALT! Live Radar</h2>
+
+    <div>
+        <span id="dot" class="status-dot"></span>
+        <span id="status-text">Inicjalizacja...</span>
+    </div>
+
+    <div class="data-box">
+        <div class="label">Twój User ID (Subskrypcja)</div>
+        <div id="userIdVal" class="value">Wczytywanie...</div>
+
+        <hr style="border: 0; border-top: 1px solid #333;">
+
+        <div class="label">Aktualna Pozycja</div>
+        <div id="locationVal" class="value">Czekam na dane GPS...</div>
+    </div>
+
+    <div class="log-container" id="logs">
+        > System gotowy do połączenia...
+    </div>
+    <button id="requestBtn" onclick="requestRide()" style="width: 100%; margin-top: 1rem; padding: 10px; background: #bb86fc; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000;">
+        ZAMÓW PRZEJAZD
+    </button>
+</div>
 
 <script>
+    // --- KONFIGURACJA ---
+    // Używamy UUID ze screena lub Twojego testowego ID
     const userId = "550e8400-e29b-41d4-a716-446655440000";
-    const topic = "/client/user/" + userId;
+    const gatewayUrl = "http://localhost:8080/api/notifications";
+    const topicPath = "/client/user/" + userId;
 
+    document.getElementById('userIdVal').innerText = userId;
+    const logs = document.getElementById('logs');
+
+    function log(msg) {
+        const div = document.createElement('div');
+        div.innerText = "> " + msg;
+        logs.prepend(div);
+    }
+
+    // --- LOGIKA POŁĄCZENIA ---
     function connect() {
-        const socket = new SockJS("http://localhost:8080/api/notifications");
-        const client = Stomp.over(socket);
+        log("Próba połączenia z Gatewayem...");
 
-        client.connect({}, () => {
-            document.getElementById('status').innerText = "POŁĄCZONO";
+        const socket = new SockJS(gatewayUrl);
+        const stompClient = Stomp.over(socket);
 
-            client.subscribe(topic, (msg) => {
-                const data = JSON.parse(msg.body);
-                document.getElementById('pos').innerText = `${data.latitude}, ${data.longitude}`;
-                console.log("Odebrano:", data);
+        // Wyłączamy logi STOMP w konsoli dla czytelności (można zostawić do debugu)
+        // stompClient.debug = null;
+
+        stompClient.connect({}, function (frame) {
+            document.getElementById('dot').className = "status-dot online";
+            document.getElementById('status-text').innerText = "Połączono (Gateway)";
+            log("Połączono ze STOMP");
+
+            stompClient.subscribe(topicPath, function (message) {
+                const data = JSON.parse(message.body);
+                log("Odebrano GPS: " + data.latitude + ", " + data.longitude);
+
+                document.getElementById('locationVal').innerHTML =
+                    `LAT: <span style="color:#03dac6">${data.latitude}</span><br>` +
+                    `LON: <span style="color:#03dac6">${data.longitude}</span>`;
             });
 
-            console.log("Subskrypcja aktywna na: " + topic);
-        }, (err) => {
-            setTimeout(connect, 5000); // Auto-reconnect
+            log("Subskrypcja: " + topicPath);
+
+        }, function (error) {
+            document.getElementById('dot').className = "status-dot offline";
+            document.getElementById('status-text').innerText = "Błąd połączenia";
+            log("BŁĄD: " + error);
+
+            // Reconnect po 5 sekundach
+            setTimeout(connect, 5000);
         });
     }
 
+    function requestRide() {
+        log("Wysyłanie żądania przejazdu...");
+
+        const payload = {
+            passengerId: userId,
+            startLat: 52.2297,
+            startLon: 21.0122,
+            endLat: 21.0122,
+            endLon: 21.0122,
+            idempotencyKey: "c9d26b04-071c-4197-851d-96c5f1ba53bc"
+        };
+
+        fetch("http://localhost:8080/api/rides", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+            .then(res => {
+                if (res.ok) log("Zlecenie utworzone! Szukam kierowcy...");
+                else log("Błąd tworzenia zlecenia.");
+            })
+            .catch(err => log("Błąd sieci: " + err));
+    }
+
+    // Start
     connect();
 </script>
+
 </body>
 </html>
