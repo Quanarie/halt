@@ -1,10 +1,12 @@
-package pl.quanarie.halt.ride;
+package pl.quanarie.halt.ride.consumer;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import pl.quanarie.halt.common.event.PaymentOnHoldEvent;
+import pl.quanarie.halt.ride.RideService;
+import pl.quanarie.halt.ride.RideStatus;
 
 import static pl.quanarie.halt.common.kafka.KafkaTopics.PAYMENT_ON_HOLD;
 

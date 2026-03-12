@@ -10,6 +10,8 @@ import pl.quanarie.halt.ride.exception.DuplicateRideRequestException;
 import pl.quanarie.halt.ride.exception.IllegalRideStatusTransitionException;
 import pl.quanarie.halt.ride.exception.RideNotFoundException;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static pl.quanarie.halt.common.kafka.KafkaTopics.RIDE_REQUESTED;
@@ -20,6 +22,12 @@ import static pl.quanarie.halt.common.kafka.KafkaTopics.RIDE_REQUESTED;
 public class RideService {
 	private final RideRepository rideRepository;
 	private final KafkaTemplate<String, Object> kafkaTemplate;
+
+	private static final List<RideStatus> ACTIVE_STATUSES = List.of(
+		RideStatus.ACCEPTED,
+		RideStatus.ARRIVED,
+		RideStatus.IN_PROGRESS
+	);
 
 	@Transactional
 	public Ride createRide(RideRequestDto request) {
@@ -79,5 +87,9 @@ public class RideService {
 			case IN_PROGRESS -> next == RideStatus.COMPLETED;
 			case COMPLETED, CANCELLED -> false;
 		};
+	}
+
+	public Optional<Ride> tryGetActiveRideForDriver(UUID driverId) {
+		return rideRepository.findFirstByDriverIdAndStatusIn(driverId, ACTIVE_STATUSES);
 	}
 }

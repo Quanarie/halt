@@ -85,7 +85,7 @@ Testowe wysłanie lokacji użytkownika:
 curl -X POST http://localhost:8080/api/tracking/location \
 -H "Content-Type: application/json" \
 -d '{
-"userId": "550e8400-e29b-41d4-a716-446655440000",
+"userId": "6988c211-920d-48d9-9d42-028dd0230fa9",
 "latitude": 52.2297,
 "longitude": 21.0122
 }'
