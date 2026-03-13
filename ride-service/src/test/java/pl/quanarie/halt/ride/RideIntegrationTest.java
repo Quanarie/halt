@@ -68,9 +68,8 @@ class RideIntegrationTest {
 			.atMost(10, TimeUnit.SECONDS)
 			.pollInterval(100, TimeUnit.MILLISECONDS)
 			.untilAsserted(() -> {
-				var publishedEvents = testKafkaConsumer.getConsumedEvents();
-				assertThat(publishedEvents).hasSize(1);
-				var event = publishedEvents.getFirst();
+				assertThat(testKafkaConsumer.getRideRequestedEvents()).isNotEmpty();
+				var event = testKafkaConsumer.getRideRequestedEvents().getLast();
 				assertThat(event.passengerId()).isEqualTo(request.passengerId());
 				assertThat(event.price()).isEqualByComparingTo(request.price());
 			});

@@ -94,6 +94,5 @@ curl -X POST http://localhost:8080/api/tracking/location \
 ### Testy
 
 ```bash
-mvn test -pl ride-service
+mvn clean test -pl ride-service
 ```
-

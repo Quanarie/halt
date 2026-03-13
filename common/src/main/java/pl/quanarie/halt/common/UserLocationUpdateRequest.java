@@ -1,4 +1,4 @@
-package pl.quanarie.halt.tracking;
+package pl.quanarie.halt.common;
 
 public record UserLocationUpdateRequest(
 	String userId,

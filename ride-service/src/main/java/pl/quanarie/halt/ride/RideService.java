@@ -6,7 +6,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pl.quanarie.halt.common.event.RideAcceptedEvent;
 import pl.quanarie.halt.ride.exception.DuplicateRideRequestException;
 import pl.quanarie.halt.ride.exception.IllegalRideStatusTransitionException;
 import pl.quanarie.halt.ride.exception.RideNotFoundException;
