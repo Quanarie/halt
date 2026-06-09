@@ -96,3 +96,29 @@ curl -X POST http://localhost:8080/api/tracking/location \
 ```bash
 mvn clean test -pl ride-service
 ```
+
+3 etap:
+
+## Podział na serwisy
+System zostanie podzielony na 4 główne mikroserwisy, aby zachować autonomię domenową i uniknąć nadmiernego rozproszenia.
+
+Pricing Service: Odpowiada za kalkulację kosztów. Zawiera agregaty: Cennik Bazowy, Kategoria Pojazdu, Wycena Dynamiczna (Mnożnik Popytu) oraz Trasa.
+
+Ride Service: Główny koordynator procesu. Zawiera agregaty: Zapytanie o Przejazd, Zlecenie (Preautoryzowane) oraz Aktywny Przejazd.
+
+Fleet & Tracking Service: Zarządza stanem kierowców. Zawiera agregaty: Miasto (Strefy) oraz Kierowca i Pojazd.
+
+History & Payment Service: Obsługuje płatności i historię. Zawiera agregaty: Zamknięty Kurs, Podsumowanie i Review (Archiwum).
+
+
+## Określenie sposobów interakcji między serwisami
+
+Komunikacja.xlsx
+
+## Bazy danych i przechowywanie informacji
+
+Bazy.xlsx
+
+## Diagram | Podział agregatów na serwisy
+
+Agregaty-serwisy.txt
