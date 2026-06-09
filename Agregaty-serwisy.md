@@ -1,3 +1,4 @@
+```mermaid
 graph TD
     classDef service fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000;
     classDef aggregate fill:#fff,stroke:#333,stroke-width:1px,color:#000;
@@ -53,3 +54,4 @@ graph TD
     style Fleet_Service fill:#e3f2fd,stroke:#1565c0
     style Ride_Service fill:#e3f2fd,stroke:#1565c0
     style History_Service fill:#e3f2fd,stroke:#1565c0
+```
