@@ -60,7 +60,7 @@ docker-compose up -d
 Z katalogu głownego:
 
 ```bash
-mvn spring-boot:run -pl api-gateway,ride-service,payment-service
+mvn spring-boot:run -pl api-gateway,ride-service,payment-service,tracking-service,notification-service
 ```
 
 ### Sanity Check

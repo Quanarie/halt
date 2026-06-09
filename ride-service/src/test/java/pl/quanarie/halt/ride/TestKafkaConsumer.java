@@ -3,9 +3,7 @@ package pl.quanarie.halt.ride;
 import lombok.Getter;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-import pl.quanarie.halt.common.event.NearbyDriversFoundEvent;
 import pl.quanarie.halt.common.event.RideRequestedEvent;
-import pl.quanarie.halt.common.event.UserLocationUpdatedEvent;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;

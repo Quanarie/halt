@@ -37,7 +37,7 @@ public class PaymentService {
         paymentRepository.save(payment);
         log.info("Zainicjowano płatność dla przejazdu: {}", rideId);
 
-        // TODO: Integracja z bramką płatniczą (Stripe/PayU)
+        // TODO: Integracja z bramką płatniczą (Stripe/PayU) oraz outbox
         kafkaTemplate.send(
           PAYMENT_ON_HOLD,
           rideId.toString(),
