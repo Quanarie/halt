@@ -1,8 +1,8 @@
 ```mermaid
 graph TD
-    classDef service fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000;
-    classDef aggregate fill:#fff,stroke:#333,stroke-width:1px,color:#000;
-    classDef external fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,stroke-dasharray: 5 5,color:#000;
+    classDef service fill:none,stroke:#4fc3f7,stroke-width:2px,color:#fff,stroke-dasharray: 5 5;
+    classDef aggregate fill:#333,stroke:#888,stroke-width:1px,color:#fff;
+    classDef external fill:#4a148c,stroke:#ab47bc,stroke-width:2px,color:#fff;
 
     subgraph Pricing_Service [Pricing Service]
         CB[Cennik Bazowy]:::aggregate
@@ -50,8 +50,8 @@ graph TD
     PR -->|Async: RideCompleted| KAFKA
     KAFKA -->|Konsumuje Zakończenia| History_Service
 
-    style Pricing_Service fill:#e3f2fd,stroke:#1565c0
-    style Fleet_Service fill:#e3f2fd,stroke:#1565c0
-    style Ride_Service fill:#e3f2fd,stroke:#1565c0
-    style History_Service fill:#e3f2fd,stroke:#1565c0
+    style Pricing_Service fill:none,stroke:#4fc3f7,color:#fff
+    style Fleet_Service fill:none,stroke:#4fc3f7,color:#fff
+    style Ride_Service fill:none,stroke:#4fc3f7,color:#fff
+    style History_Service fill:none,stroke:#4fc3f7,color:#fff
 ```
